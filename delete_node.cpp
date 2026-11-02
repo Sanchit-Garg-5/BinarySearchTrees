@@ -46,66 +46,72 @@ template <class... Args> void _print(stack <Args...> v) {cerr << "[ "; while (!v
 template <class... Args> void _print(queue <Args...> v) {cerr << "[ "; while (!v.empty()) {_print(v.front()); cerr << " "; v.pop();} cerr << "]";}
 template <class... Args> void _print(priority_queue <Args...> v) {cerr << "[ "; while (!v.empty()) {_print(v.top()); cerr << " "; v.pop();} cerr << "]";}
 
-class Node{
-    public:
-    ll data;
-    Node* left; 
-    Node* right;
-    Node(ll val, Node* left1, Node* right1):data(val),left(left1),right(right1){}
-    Node(ll val):data(val),left(nullptr),right(nullptr){}
-    Node():data(0),left(nullptr),right(nullptr){}
-};
+
 /*tc is o(n)
 and sc is  o(h) for recursive search or o(1) for iterative search
 */
-Node* prev=nullptr;
-Node* search(Node* curr, ll val){
-    if(!curr){return nullptr;}
-    if(curr->data==val){return curr;}
-    if(curr->data>val){prev=curr; return search(curr->left,val);}
-    if(curr->data<val){prev=curr; return search(curr->right,val);}
-}
-ll child(Node* curr){
-    ll ans=0;
-    if(curr->left){ans++;}
-    if(curr->right){ans++;} return ans;
-}
-void set1(Node* big,Node* small){
-    while(big->left){big=big->left;}
-    big->left=small;
-}
-Node* delete1(Node* ans,Node* root){
-    if(!ans){return root;}
-    int c=child(ans);
-    if(ans==root){ 
-        if(c==0){return nullptr;}
-        if(c==1){if(ans->left){return ans->left;} return ans->right;}
-        if(c==2){
-            set1(ans->right,ans->left); return ans->right;
+class Solution {
+public:
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if (!root) return nullptr;
+
+        // If the root itself is the target
+        if (root->val == key) {
+            return performDelete(root);
         }
-    } 
-    if(c==0){
-        if(prev->left==ans){prev->left=nullptr;}
-        else{prev->right=nullptr;}
+
+        TreeNode* curr = root;
+        TreeNode* prev = nullptr;
+
+        // Iterative search, eliminating the need for a global 'prev'
+        while (curr && curr->val != key) {
+            prev = curr;
+            if (key < curr->val) {
+                curr = curr->left;
+            } else {
+                curr = curr->right;
+            }
+        }
+
+        // If the key was found, delete and rewire the parent's pointer
+        if (curr) {
+            if (prev->left == curr) {
+                prev->left = performDelete(curr);
+            } else {
+                prev->right = performDelete(curr);
+            }
+        }
+
+        return root;
     }
-    if(c==1){
-        if(prev->left==ans){
-            if(ans->right){prev->left=ans->right;} 
-            else{prev->left=ans->left;}
+
+private:
+    // Consolidates your child() checking and set1() merging logic
+    TreeNode* performDelete(TreeNode* node) {
+        // Case 0 or 1 child
+        if (!node->left) {
+            TreeNode* rightChild = node->right;
+            delete node;
+            return rightChild;
         }
-        else{
-            if(ans->right){prev->right=ans->right;} 
-            else{prev->right=ans->left;}
+        if (!node->right) {
+            TreeNode* leftChild = node->left;
+            delete node;
+            return leftChild;
         }
-    } 
-    if(c==2){ 
-        set1(ans->right,ans->left);
-        if(prev->left==ans){prev->left=ans->right;}
-        else{prev->right=ans->left;}
+
+        // Case 2 children: Attach the left subtree to the leftmost node of the right subtree
+        TreeNode* big = node->right;
+        TreeNode* small = node->left;
+        
+        TreeNode* leftmost_of_big = big;
+        while (leftmost_of_big->left) {
+            leftmost_of_big = leftmost_of_big->left;
+        }
+        
+        leftmost_of_big->left = small;
+        
+        delete node;
+        return big; 
     }
-    delete ans; return root;
-}
-int main(){
-    Node* ans=search(root,11);
-    root=delete1(ans,root);
-}
+};
